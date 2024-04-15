@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudFormation stack - Data Quest"
+Resources:
+    LambdaFunction:
+        Type: "AWS::Lambda::Function"
+        DependsOn: IAMRole
+        Properties:
+            Description: ""
+            FunctionName: "data-quest"
+            PackageType: Image
+            Architectures: 
+              - "x86_64"
+            Code: 
+                ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.us-east-1.amazonaws.com/data-quest:latest"
+            MemorySize: 1024
+            Role: !GetAtt IAMRole.Arn
+            Timeout: 900
+            TracingConfig: 
+                Mode: "PassThrough"
+            EphemeralStorage: 
+                Size: 1024
+
+    MyDeadLetterQueue: 
+        Type: "AWS::SQS::Queue"
+
+    SQSQueue:
+        Type: "AWS::SQS::Queue"
+        DependsOn: MyDeadLetterQueue
+        Properties:
+            DelaySeconds: "0"
+            MaximumMessageSize: "262144"
+            MessageRetentionPeriod: "345600"
+            ReceiveMessageWaitTimeSeconds: "0"
+            VisibilityTimeout: "900"
+            QueueName: "sqs-queue"
+            RedrivePolicy:
+                deadLetterTargetArn: !GetAtt MyDeadLetterQueue.Arn
+                maxReceiveCount: 1
+
+    SQSQueuePolicy: 
+        Type: AWS::SQS::QueuePolicy
+        DependsOn: SQSQueue
+        Properties: 
+            Queues: 
+              - !Sub "https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/sqs-queue"
+            PolicyDocument: 
+                Statement: 
+                  - 
+                    Action: 
+                      - "SQS:SendMessage" 
+                      - "SQS:ReceiveMessage"
+                    Effect: "Allow"
+                    Resource: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:sqs-queue"
+                    Condition:
+                        StringEquals:
+                            "aws:SourceAccount" : !Sub "${AWS::AccountId}"
+                        ArnLike:
+                            "aws:SourceArn": !Sub "arn:aws:s3:::rearc-quest-bucket-roman"
+                    Principal:  
+                        Service: "s3.amazonaws.com"
+
+    LambdaEventSourceMapping:
+        Type: "AWS::Lambda::EventSourceMapping"
+        DependsOn: 
+          - SQSQueue
+          - LambdaFunction
+        Properties:
+            BatchSize: 1
+            EventSourceArn: !GetAtt SQSQueue.Arn
+            FunctionName: !GetAtt LambdaFunction.Arn
+            Enabled: true
+            MaximumBatchingWindowInSeconds: 0
+
+    S3Bucket:
+        Type: "AWS::S3::Bucket"
+        DependsOn: SQSQueuePolicy
+        Properties:
+            BucketName: "rearc-quest-bucket-roman"
+            BucketEncryption: 
+                ServerSideEncryptionConfiguration: 
+                  - 
+                    ServerSideEncryptionByDefault: 
+                        SSEAlgorithm: "AES256"
+                    BucketKeyEnabled: true
+            NotificationConfiguration:
+              QueueConfigurations:
+              - Filter:
+                  S3Key:
+                    Rules:
+                    - Value: ""
+                      Name: "Prefix"
+                    - Value: ".json"
+                      Name: "Suffix"
+                Event: "s3:ObjectCreated:Put"
+                Queue: !GetAtt SQSQueue.Arn
+              TopicConfigurations: []
+              LambdaConfigurations: []
+            OwnershipControls: 
+                Rules: 
+                  - 
+                    ObjectOwnership: "BucketOwnerEnforced"
+            PublicAccessBlockConfiguration: 
+                BlockPublicAcls: false
+                BlockPublicPolicy: false
+                IgnorePublicAcls: false
+                RestrictPublicBuckets: false
+
+    S3BucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        DependsOn: S3Bucket
+        Properties:
+            Bucket: !Ref S3Bucket
+            PolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  - Sid: "Stmt1405592139000"
+                    Effect: Allow
+                    Principal: "*"
+                    Action: "s3:*"
+                    Resource:
+                      - !Sub "arn:aws:s3:::${S3Bucket}/*"
+                      - !Sub "arn:aws:s3:::${S3Bucket}"
+
+    EventsRule:
+        Type: "AWS::Events::Rule"
+        DependsOn: LambdaFunction
+        Properties:
+            Name: "trigger-daily"
+            ScheduleExpression: "rate(24 hours)"
+            State: "ENABLED"
+            Targets: 
+              - 
+                Arn: !GetAtt LambdaFunction.Arn
+                Id: "Id6031542f-0ed1-41bd-9960-cff2b38f409a"
+            EventBusName: "default"
+
+    IAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: "lambdaex"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"},{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"scheduler.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+              - "arn:aws:iam::aws:policy/AmazonEventBridgeFullAccess"
