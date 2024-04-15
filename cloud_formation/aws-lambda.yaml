@@ -11,7 +11,7 @@ Resources:
             Architectures: 
               - "x86_64"
             Code: 
-                ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.us-east-1.amazonaws.com/data-quest:latest"
+                ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/data-quest:latest"
             MemorySize: 1024
             Role: !GetAtt IAMRole.Arn
             Timeout: 900
