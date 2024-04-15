@@ -1,6 +1,6 @@
 #### Part 1: AWS S3 & Sourcing Datasets
 1. Republish [this open dataset](https://download.bls.gov/pub/time.series/pr/) in Amazon S3 and share with us a link.
-    [rearc-quest-bucket-roman]https://us-east-1.console.aws.amazon.com/s3/buckets/rearc-quest-bucket-roman
+    [rearc-quest-bucket-roman](https://us-east-1.console.aws.amazon.com/s3/buckets/rearc-quest-bucket-roman)
 
     [/analyse_data.ipynb](/analyse_data.ipynb) - cmd 3, [/lambda_function.py](/lambda_function.py) - line 41
 
