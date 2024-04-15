@@ -59,3 +59,5 @@
     2.1. [aws-lambda.yaml](/cloud_formation/aws-lambda.yaml) -> SQSQueue & S3Bucket.NotificationConfiguration
 3. For every message on the queue - execute a Lambda function that outputs the reports from Part 3 (just logging the results of the queries would be enough. No .ipynb is required).
     3.1. [aws-lambda.yaml](/cloud_formation/aws-lambda.yaml) - > LambdaEventSourceMapping
+
+    The logs can be found in the [s3 bucket](https://us-east-1.console.aws.amazon.com/s3/buckets/rearc-quest-bucket-roman) /logs
