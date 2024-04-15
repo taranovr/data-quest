@@ -18,11 +18,13 @@ if aws ecr describe-repositories --repository-names $IMAGE_NAME &>/dev/null; the
 fi
 
 if docker image inspect "$IMAGE_NAME" &>/dev/null; then
+    echo "Deleting existing image $IMAGE_NAME..."
     docker rmi "$IMAGE_NAME"
     echo "Image $IMAGE_NAME deleted successfully."
 fi
 
 if docker image inspect "$ECR_REPO_URL" &>/dev/null; then
+    echo "Deleting existing tag $ECR_REPO_URL..."
     docker rmi "$ECR_REPO_URL"
     echo "Image $ECR_REPO_URL deleted successfully."
 fi
