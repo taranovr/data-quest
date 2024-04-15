@@ -1,5 +1,6 @@
 #### Part 1: AWS S3 & Sourcing Datasets
 1. Republish [this open dataset](https://download.bls.gov/pub/time.series/pr/) in Amazon S3 and share with us a link.
+
     [rearc-quest-bucket-roman](https://us-east-1.console.aws.amazon.com/s3/buckets/rearc-quest-bucket-roman)
 
     [/analyse_data.ipynb](/analyse_data.ipynb) - cmd 3, [/lambda_function.py](/lambda_function.py) - line 41
@@ -50,7 +51,7 @@
 1. The deployment should include a Lambda function that executes
    Part 1 and Part 2 (you can combine both in 1 lambda function).
    
-    1.1. The lambda function is based on docker image, described in Dockerfile and pushed to AWS ECR by push_image.sh
+    1.1. The lambda function is based on docker image, described in Dockerfile and pushed to AWS ECR by [push_image.sh](/push_image.sh)
     1.2. [aws-lambda.yaml](/cloud_formation/aws-lambda.yaml) is a CloudFormation template used to deploy the services. 
          The lambda function LambdaFunction will be scheduled to run daily EventsRule.
 

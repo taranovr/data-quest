@@ -6,6 +6,7 @@ import logging
 import pandas as pd
 import datetime
 import utils
+import warnings
 from config import (
     FTP_SERVER_LINK,
     API_LINK,
@@ -16,7 +17,7 @@ from config import (
 )
 
 pd.set_option("display.float_format", lambda x: "%.2f" % x)
-
+warnings.simplefilter(action='ignore', category=FutureWarning)
 # Part 1: AWS S3 & Sourcing Datasets
 s3_resource = boto3.resource("s3")
 
